@@ -2,7 +2,7 @@
 #include "common.h"
 #include "devLED.h"
 #include "config.h"
-
+#include "random.h"
 #ifdef HAS_RGB
 
 #ifdef WS2812_IS_GRB
@@ -35,7 +35,7 @@ static uint8_t *bootLEDs = statusLEDs;
 #include "POWERMGNT.h"
 
 #if (defined(PLATFORM_ESP32) || defined(PLATFORM_ESP8266)) && defined(GPIO_PIN_LED_WS2812)
-
+#define WS2812_PIXEL_COUNT 8
 static uint8_t pixelCount;
 static uint8_t *statusLEDs;
 static uint8_t statusLEDcount;
@@ -368,6 +368,7 @@ static int blinkyUpdate() {
 
 static void initialize()
 {
+
     if (GPIO_PIN_LED_WS2812 != UNDEF_PIN)
     {
         #if defined(PLATFORM_ESP32) || defined(PLATFORM_ESP8266)
@@ -413,6 +414,8 @@ static void initialize()
             }
         }
         #endif
+        Serial.print("Status LEDS Count:   ");
+        Serial.println(statusLEDcount);
         WS281Binit();
         blinkyColor.h = 0;
         blinkyColor.s = 255;
@@ -440,6 +443,143 @@ static int start()
     return DURATION_IMMEDIATELY;
 }
 
+
+
+
+
+int i = 0;
+void chasing_rainbow(uint8_t color_difference) {
+    blinkyColor.s = 255;
+    i = i + 8;
+    if (i > 255) {
+        i = 0;
+    }
+    for (int j = 0; j < statusLEDcount; j++) {
+        //Serial.print("LED index:  ");
+        //Serial.print(j);
+        blinkyColor.h = i + (j * color_difference);
+        //Serial.print("  LED Hue:   ");
+        //Serial.println(blinkyColor.h);
+        WS281BsetLED(j, HsvToRgb(blinkyColor));
+    }
+    if (OPT_WS2812_IS_GRB)
+    {
+        stripgrb->Show();
+    }
+    else
+    {
+        striprgb->Show();  
+    }
+}
+
+
+
+void fire_animation(int color) {
+  for (uint8_t i = 0; i < statusLEDcount; i++) {
+    blinkyColor.h = color;
+    blinkyColor.s = 255;
+    blinkyColor.v = (rand() % 200) + 50;
+    WS281BsetLED(i, HsvToRgb(blinkyColor));
+  }
+  if (OPT_WS2812_IS_GRB)
+    {
+        stripgrb->Show();
+    }
+    else
+    {
+        striprgb->Show();  
+    }
+}
+
+
+
+
+
+
+
+
+
+
+uint32_t last_time_led_animation = 0;
+int led_index_number = 0;
+void christmas_animation() {
+    uint32_t now = millis();
+    if ((now - last_time_led_animation) < 700) {
+        return;
+    }
+    led_index_number ++;
+    if (led_index_number == 254) {led_index_number = 0;}
+    last_time_led_animation = now;
+    for (uint8_t i = 0; i < statusLEDcount; i++) {
+        int switch_case_number = led_index_number + i;
+        switch_case_number = switch_case_number % 3;
+        switch (switch_case_number) {
+            case 0:
+                blinkyColor.h = 0;
+                break;
+            case 1:
+                blinkyColor.h = 100;
+                break;
+            case 2:
+                blinkyColor.h = 170;
+                break;
+        }
+        blinkyColor.s = 255;
+        blinkyColor.v = 150;
+        WS281BsetLED(i, HsvToRgb(blinkyColor));
+    }
+    if (OPT_WS2812_IS_GRB)
+    {
+        stripgrb->Show();
+    }
+    else
+    {
+        striprgb->Show();  
+    }
+}
+
+void christmas_animation_no_blue() {
+    uint32_t now_led_animation = millis();
+    if ((now_led_animation - last_time_led_animation) < 700) {
+        return;
+    }
+    led_index_number ++;
+    if (led_index_number == 254) {led_index_number = 0;}
+    last_time_led_animation = now_led_animation;
+    for (uint8_t i = 0; i < statusLEDcount; i++) {
+        int switch_case_number = led_index_number + i;
+        switch_case_number = switch_case_number % 2;
+        switch (switch_case_number) {
+            case 0:
+                blinkyColor.h = 0;
+                break;
+            case 1:
+                blinkyColor.h = 120;
+                break;
+        }
+        blinkyColor.s = 255;
+        blinkyColor.v = 150;
+        WS281BsetLED(i, HsvToRgb(blinkyColor));
+    }
+    if (OPT_WS2812_IS_GRB)
+    {
+        stripgrb->Show();
+    }
+    else
+    {
+        striprgb->Show();  
+    }
+}
+
+
+
+
+
+
+
+
+
+
 static int timeout()
 {
     if (GPIO_PIN_LED_WS2812 == UNDEF_PIN)
@@ -453,7 +593,7 @@ static int timeout()
     #if defined(TARGET_RX)
         if (InBindingMode)
         {
-            blinkyColor.h = 10;
+            blinkyColor.h = 120;
             return flashLED(blinkyColor, 192, 0, LEDSEQ_BINDING, sizeof(LEDSEQ_BINDING));
         }
     #endif
@@ -468,13 +608,19 @@ static int timeout()
             }
         #endif
         // Set the color and we're done!
-        #ifndef BUILD_SHREW_RGBLED
+        
+
+        
+         #ifndef BUILD_SHREW_RGBLED
         blinkyColor.h = ExpressLRS_currAirRate_Modparams->index * 256 / RATE_MAX;
         blinkyColor.v = fmap(POWERMGNT::currPower(), 0, PWR_COUNT-1, 10, 128);
         WS281BsetLED(HsvToRgb(blinkyColor));
         #else
         shrew_updateRgbLed();
-        #endif
+        #endif 
+        
+
+
         return DURATION_NEVER;
     case tentative:
         // Set the color and we're done!
@@ -488,7 +634,7 @@ static int timeout()
         return DURATION_NEVER;
     case disconnected:
         #if defined(TARGET_RX)
-            blinkyColor.h = 10;
+            blinkyColor.h = 0;
             return flashLED(blinkyColor, 192, 0, LEDSEQ_DISCONNECTED, sizeof(LEDSEQ_DISCONNECTED));
         #endif
         #if defined(TARGET_TX)
@@ -512,6 +658,7 @@ static int timeout()
         blinkyColor.h = 10;
         return flashLED(blinkyColor, 192, 0, LEDSEQ_NO_CROSSFIRE, sizeof(LEDSEQ_NO_CROSSFIRE));
     default:
+        
         return DURATION_NEVER;
     }
 }
@@ -525,8 +672,10 @@ device_t RGB_device = {
 
 #ifdef BUILD_SHREW_RGBLED
 
+
 void shrew_updateRgbLed()
 {
+
     static uint32_t last_time = 0;
     static uint32_t accum = 0;
     static uint16_t prev[CRSF_NUM_CHANNELS];
@@ -539,10 +688,11 @@ void shrew_updateRgbLed()
     }
 
     uint32_t now = millis();
-    if ((now - last_time) < 100) {
+    if ((now - last_time) < 35) {
         return;
     }
     last_time = now;
+
     if (connectionState == connected || connectionState == tentative) {
         blinkyColor.s = 255;
         blinkyColor.v = 128;
@@ -553,8 +703,35 @@ void shrew_updateRgbLed()
             blinkyColor.h = ExpressLRS_currAirRate_Modparams->index * 256 / RATE_MAX;
             blinkyColor.v = fmap(POWERMGNT::currPower(), 0, PWR_COUNT-1, 10, 128);
         }
-        WS281BsetLED(HsvToRgb(blinkyColor));
+
+        
     }
+
+
+
+    // Begin Channel inputted led animations
+    Serial.println(ChannelData[2]);
+    if (ChannelData[2] > 340) {
+        if(ChannelData[2] > 1300) {
+            fire_animation(170);
+        }
+        else if(ChannelData[2] > 900) {
+            fire_animation(200);
+        }
+        else {
+            fire_animation(0);
+        }
+
+    }
+    else if (ChannelData[5] > 1300) {
+        christmas_animation_no_blue();
+    }
+    else {
+        chasing_rainbow(8);
+        //christmas_animation();
+    }
+
+
 }
 
 #endif

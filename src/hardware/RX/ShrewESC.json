@@ -18,10 +18,10 @@
     "power_control": 0,
     "power_values": [13],
 
-    "led_rgb": 5,
+    "led_rgb": 10,
     "led_rgb_isgrb": true,
-    "ledidx_rgb_status": [0],
-    "ledidx_rgb_boot": [0],
+    "ledidx_rgb_status": [0, 1, 2, 3, 4, 5, 6, 7],
+    "ledidx_rgb_boot": [0, 1, 2, 3, 4, 5, 6, 7],
     "led_rgb_shrewcycle": true,
 
     "vbat": 4,

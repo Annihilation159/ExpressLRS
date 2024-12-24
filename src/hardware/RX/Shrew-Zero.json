@@ -1,7 +1,7 @@
 {
     "serial_rx": 3,
     "serial_tx": 1,
-    "pwm_outputs": [19, 22, 13, 27, 9, 10],
+    "pwm_outputs": [19, 22, 13, 27, 9],
 
     "radio_busy": 23,
     "radio_dio1": 18,
@@ -18,10 +18,10 @@
     "power_control": 0,
     "power_values": [13],
 
-    "led_rgb": 5,
+    "led_rgb": 10,
     "led_rgb_isgrb": true,
-    "ledidx_rgb_status": [0],
-    "ledidx_rgb_boot": [0],
+    "ledidx_rgb_status": [0, 1, 2, 3, 4, 5, 6, 7],
+    "ledidx_rgb_boot": [0, 1, 2, 3, 4, 5, 6, 7],
     "led_rgb_shrewcycle": true,
 
     "vbat": 4,

@@ -116,13 +116,49 @@ static void servosFailsafe()
     #endif
 }
 
+
+void arcade_drive(uint32_t x, uint32_t y, uint32_t *left_motor, uint32_t *right_motor) {
+    // center
+    x -= CRSF_CHANNEL_VALUE_MID;
+    y -= CRSF_CHANNEL_VALUE_MID;
+
+    // do the mix
+    *left_motor = y + x;
+    *right_motor = y - x;
+
+    // turn back into uncentered CRSF range
+    *left_motor += CRSF_CHANNEL_VALUE_MID;
+    *right_motor += CRSF_CHANNEL_VALUE_MID;
+
+    // ensure limits
+    if (*left_motor < CRSF_CHANNEL_VALUE_MIN) *left_motor = CRSF_CHANNEL_VALUE_MIN;
+    if (*left_motor > CRSF_CHANNEL_VALUE_MAX) *left_motor = CRSF_CHANNEL_VALUE_MAX;
+    if (*right_motor < CRSF_CHANNEL_VALUE_MIN) *right_motor = CRSF_CHANNEL_VALUE_MIN;
+    if (*right_motor > CRSF_CHANNEL_VALUE_MAX) *right_motor = CRSF_CHANNEL_VALUE_MAX;
+}
+
+
 static void servosUpdate(unsigned long now)
 {
     static uint32_t lastUpdate;
     if (newChannelsAvailable)
     {
         newChannelsAvailable = false;
+
         lastUpdate = now;
+        // Begin mixing
+
+        // Create updated channel list before mixing
+        uint32_t mixedChannelData[CRSF_NUM_CHANNELS];
+        // fill updated list with the channel input dataAw
+        for (int i = 0; i < CRSF_NUM_CHANNELS; i++) {mixedChannelData[i] = ChannelData[i];}
+
+        uint32_t driveInput = ChannelData[1];
+        uint32_t turnInput = ChannelData[0];
+        
+        arcade_drive(turnInput, driveInput, &mixedChannelData[0], &mixedChannelData[1]);
+
+        
 
         #if defined(BUILD_SHREW_RGBLED) && defined(PLATFORM_ESP32)
         shrew_updateRgbLed();
@@ -135,7 +171,7 @@ static void servosUpdate(unsigned long now)
         for (int ch = 0 ; ch < GPIO_PIN_PWM_OUTPUTS_COUNT ; ++ch)
         {
             const rx_config_pwm_t *chConfig = config.GetPwmChannel(ch);
-            const unsigned crsfVal = ChannelData[chConfig->val.inputChannel];
+            const unsigned crsfVal = mixedChannelData[chConfig->val.inputChannel];
             // crsfVal might 0 if this is a switch channel, and it has not been
             // received yet. Delay initializing the servo until the channel is valid
             if (crsfVal == 0)

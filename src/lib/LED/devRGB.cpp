@@ -4,6 +4,16 @@
 #include "config.h"
 #include "random.h"
 #ifdef HAS_RGB
+#define IDLE_ANIMATION_STYLE 0
+#define SECONDARY_ANIMATION_STYLE 0
+#define LED_STRIP_LENGTH 8
+
+/*
+######## LED Animation styles: ########
+1 ----------------- Rainbow
+2 ----------------- Christmas LEDs
+
+*/
 
 #ifdef WS2812_IS_GRB
     #ifndef OPT_WS2812_IS_GRB
@@ -575,6 +585,81 @@ void christmas_animation_no_blue() {
 
 
 
+// brightness algorithm 255 - (j * (255 / firework_size))
+
+
+uint16_t firework_generator = 0;
+uint16_t firework_randomness = 75;
+uint16_t fade_speed = 15;
+uint16_t firework_color = 0;
+uint16_t led_brightness[LED_STRIP_LENGTH] = {0,0,0,0,0,0,0,0};
+uint16_t led_color[LED_STRIP_LENGTH] = {0,0,0,0,0,0,0,0};
+void firework_animation() {
+    //fade all leds properly
+    for(uint16_t i = 0; i < LED_STRIP_LENGTH; i++) {
+        blinkyColor.h = led_color[i];
+        if(led_brightness[i] - fade_speed < 0) {
+            led_brightness[i] = 0;
+            blinkyColor.v = 0;
+        }
+        else {
+            blinkyColor.v = led_brightness[i] - fade_speed;
+            led_brightness[i] -= fade_speed;
+        }
+
+
+        WS281BsetLED(i, HsvToRgb(blinkyColor));
+    }
+
+
+    //randomly generate explosion
+    for(uint16_t i = 0; i < LED_STRIP_LENGTH; i++) {
+        
+        firework_generator = random() % firework_randomness;
+        firework_color = random() % 255;
+        if(firework_generator == 0) {
+            Serial.print("Generated firework at ");
+            Serial.println(i);
+            blinkyColor.h = firework_color;
+            blinkyColor.s = 255;
+            blinkyColor.v = 255;
+            led_color[i] = blinkyColor.h;
+            led_brightness[i] = blinkyColor.v;
+            WS281BsetLED(i, HsvToRgb(blinkyColor));
+        }
+    }
+    
+
+    if (OPT_WS2812_IS_GRB)
+    {
+        stripgrb->Show();
+    }
+    else
+    {
+        striprgb->Show();  
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -710,7 +795,6 @@ void shrew_updateRgbLed()
 
 
     // Begin Channel inputted led animations
-    Serial.println(ChannelData[2]);
     if (ChannelData[2] > 340) {
         if(ChannelData[2] > 1300) {
             fire_animation(170);
@@ -724,11 +808,24 @@ void shrew_updateRgbLed()
 
     }
     else if (ChannelData[5] > 1300) {
-        christmas_animation_no_blue();
+        switch (SECONDARY_ANIMATION_STYLE) {
+            case 0:
+                firework_animation();
+                break;
+            case 1:
+                christmas_animation_no_blue();
+                break;
+        }
     }
     else {
-        chasing_rainbow(8);
-        //christmas_animation();
+        switch (IDLE_ANIMATION_STYLE) {
+            case 0:
+                chasing_rainbow(8);
+                break;
+            case 1:
+                christmas_animation_no_blue();
+                break;
+        }
     }
 
 

@@ -11,7 +11,7 @@
 ### BINDING PHRASE: ###
 # Uncomment the line below to use a hardcoded binding phrase
 # Leave commented to use traditional binding
-#-DMY_BINDING_PHRASE="default ExpressLRS binding phrase"
+-DMY_BINDING_PHRASE="Catnip Antweight"
 
 
 ### REGULATORY DOMAIN: ###
@@ -58,7 +58,13 @@
 
 ### OTHER OPTIONS: ###
 
+<<<<<<< Updated upstream
 -DAUTO_WIFI_ON_INTERVAL=60
+=======
+-DSHREW=0
+
+-DAUTO_WIFI_ON_INTERVAL=30
+>>>>>>> Stashed changes
 #-DHOME_WIFI_SSID=""
 #-DHOME_WIFI_PASSWORD=""
 
